@@ -8,7 +8,7 @@ class SubripFile extends File
 {
 
     const PATTERN_HEADER =
-        '/^
+    '/^
     ([\d]+)                                          # Subtitle order.
     [ ]*                                             # Possible whitespace
     ((?:\r\n|\r|\n))                                 # Line ending
@@ -16,13 +16,13 @@ class SubripFile extends File
     ;
 
     const PATTERN_ORDER =
-        '/^
+    '/^
     \d+
     [ ]*
     $/x';
 
     const PATTERN_TIMESTAMP =
-        '/^
+    '/^
     ([\d]{1,2}:[\d]{1,2}:[\d]{1,2} # HH:MM:SS
       (?:,[\d]{1,3})?)             # Optional milliseconds
     $/xu'
@@ -47,7 +47,7 @@ class SubripFile extends File
         // Strip UTF-8 BOM
         $bom = pack('CCC', 0xef, 0xbb, 0xbf);
         if (substr($content, 0, 3) === $bom) {
-            $content = substr($content, 3);
+          $content = substr($content, 3);
         }
 
         $matches = array();
@@ -62,80 +62,80 @@ class SubripFile extends File
         $subtitleOrder = 1;
         $strict = $this->options['_requireStrictFileFormat'];
         if (!$strict) {
-            if ($matches[1] === '0') {
-                // Allow starting index at 0
-                $subtitleOrder = 0;
-            }
+          if ($matches[1] === '0') {
+            // Allow starting index at 0
+            $subtitleOrder = 0;
+          }
         }
 
         $lines = explode($this->lineEnding, $content);
 
         $state = 'order';
         foreach ($lines as $lineNumber => $line) {
-
+        
             switch ($state) {
-                case 'order':
-                    if (!preg_match(self::PATTERN_ORDER, $line)) {
-                        throw new \Exception($this->filename.' is not a proper .srt file. (Expected subtitle order index at line '.$lineNumber.')');
-                    }
-                    $subtitleIndex = intval($line);
-                    if ($subtitleOrder !== $subtitleIndex) {
-                        throw new \Exception($this->filename.' is not a proper .srt file. (Invalid subtitle order index: '.$line.' at line '.$lineNumber.')');
-                    }
-                    $state = 'time';
-                    break;
+            case 'order':
+                if (!preg_match(self::PATTERN_ORDER, $line)) {
+                    throw new \Exception($this->filename.' is not a proper .srt file. (Expected subtitle order index at line '.$lineNumber.')');
+                }
+                $subtitleIndex = intval($line);
+                if ($subtitleOrder !== $subtitleIndex) {
+                    throw new \Exception($this->filename.' is not a proper .srt file. (Invalid subtitle order index: '.$line.' at line '.$lineNumber.')');
+                }
+                $state = 'time';
+                break;
 
-                case 'time':
-                    $timeline = explode(' --> ', $line);
-                    if (count($timeline) !== 2) {
-                        throw new \Exception($this->filename." is not a proper .srt file. (Invalid timestamp delimiter at line ".$lineNumber.")");
-                    }
+            case 'time':
+                $timeline = explode(' --> ', $line);
+                if (count($timeline) !== 2) {
+                  throw new \Exception($this->filename." is not a proper .srt file. (Invalid timestamp delimiter at line ".$lineNumber.")");
+                }
 
-                    $subtitleTimeStart = trim($timeline[0]);
-                    $subtitleTimeEnd = trim($timeline[1]);
-                    if (!preg_match(self::PATTERN_TIMESTAMP, $subtitleTimeStart)) {
-                        throw new \Exception($this->filename.' is not a proper .srt file. (Invalid start timestamp format '.$subtitleTimeStart.' at line '.$lineNumber.')');
-                    }
-                    if (!preg_match(self::PATTERN_TIMESTAMP, $subtitleTimeEnd)) {
-                        throw new \Exception($this->filename.' is not a proper .srt file. (Invalid end timestamp format '.$subtitleTimeEnd.' at line '.$lineNumber.')');
-                    }
+                $subtitleTimeStart = trim($timeline[0]);
+                $subtitleTimeEnd = trim($timeline[1]);
+                if (!preg_match(self::PATTERN_TIMESTAMP, $subtitleTimeStart)) {
+                  throw new \Exception($this->filename.' is not a proper .srt file. (Invalid start timestamp format '.$subtitleTimeStart.' at line '.$lineNumber.')');
+                }
+                if (!preg_match(self::PATTERN_TIMESTAMP, $subtitleTimeEnd)) {
+                  throw new \Exception($this->filename.' is not a proper .srt file. (Invalid end timestamp format '.$subtitleTimeEnd.' at line '.$lineNumber.')');
+                }
 
-                    $subtitleTimeStart = $this->cleanUpTimecode($subtitleTimeStart);
-                    $subtitleTimeEnd = $this->cleanUpTimecode($subtitleTimeEnd);
+                $subtitleTimeStart = $this->cleanUpTimecode($subtitleTimeStart);
+                $subtitleTimeEnd = $this->cleanUpTimecode($subtitleTimeEnd);
 
-                    if ($subtitleTimeLast &&
-                        $strict && // Allow overlapping timecodes when not in "strict mode"
-                        !$this->validateTimelines($subtitleTimeLast, $subtitleTimeStart, true)
-                    ) {
-                        throw new \Exception($this->filename.' is not a proper .srt file. (Starting time invalid: '.$subtitleTimeStart.' at line '.$lineNumber.')');
-                    }
-                    if (!$this->validateTimelines($subtitleTimeStart, $subtitleTimeEnd, !$strict)) {
-                        throw new \Exception($this->filename.' is not a proper .srt file. (Ending time invalid: '.$subtitleTimeEnd.' at line '.$lineNumber.')');
-                    }
-                    $subtitleText = array();
-                    $state = 'text';
-                    break;
+                if ($subtitleTimeLast &&
+                    $strict && // Allow overlapping timecodes when not in "strict mode"
+                    !$this->validateTimelines($subtitleTimeLast, $subtitleTimeStart, true)
+                ) {
+                    throw new \Exception($this->filename.' is not a proper .srt file. (Starting time invalid: '.$subtitleTimeStart.' at line '.$lineNumber.')');
+                }
+                if (!$this->validateTimelines($subtitleTimeStart, $subtitleTimeEnd, !$strict)) {
+                    throw new \Exception($this->filename.' is not a proper .srt file. (Ending time invalid: '.$subtitleTimeEnd.' at line '.$lineNumber.')');
+                }
+                $subtitleText = array();
+                $state = 'text';
+                break;
 
-                case 'text':
-                    $subtitleText[] = $line;
-                    if ($line === '' || $lineNumber === count($lines) - 1) {
-                        $state = 'end';
-                        // Fall through...
-                    }
-
-                    break;
+            case 'text':
+                $subtitleText[] = $line;
+                if ($line === '' || $lineNumber === count($lines) - 1) {
+                  $state = 'end';
+                  // Fall through...
+                } else {
+                  break;
+                }
                 // Fall through...
 
-                case 'end':
-                    $subtitleTimeLast = $subtitleTimeEnd;
-                    $subtitleOrder++;
+            case 'end':
+                $subtitleTimeLast = $subtitleTimeEnd;
+                $subtitleOrder++;
 
-                    $cue = new SubripCue($subtitleTimeStart, $subtitleTimeEnd, implode($this->lineEnding, $subtitleText));
-                    $cue->setLineEnding($this->lineEnding);
-                    $this->addCue($cue);
+                $cue = new SubripCue($subtitleTimeStart, $subtitleTimeEnd, implode($this->lineEnding, $subtitleText));
+                $cue->setLineEnding($this->lineEnding);
+                $this->addCue($cue);
 
-                    $state = 'order';
-                    break;
+                $state = 'order';
+                break;
             }
         }
 
