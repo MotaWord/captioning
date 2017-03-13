@@ -42,7 +42,7 @@ class SubripFile extends File
 
     public function parse()
     {
-        $content = $this->fileContent;
+        $content = trim($this->fileContent);
 
         // Strip UTF-8 BOM
         $bom = pack('CCC', 0xef, 0xbb, 0xbf);
