@@ -2,7 +2,7 @@
 
 namespace Captioning;
 
-abstract class File implements FileInterface
+abstract class File implements FileInterface, \Countable
 {
     const DEFAULT_ENCODING = 'UTF-8';
 
@@ -361,6 +361,10 @@ abstract class File implements FileInterface
      */
     public function sortCues()
     {
+        if (count($this->cues) === 0) {
+            return $this;
+        }
+
         $tmp = array();
 
         $count = 0; // useful if 2 cues start at the same time code
@@ -696,5 +700,13 @@ abstract class File implements FileInterface
             return $element['value'];
         }
         return false;
+    }
+
+    /**
+     * @return int
+     */
+    public function count()
+    {
+        return $this->getCuesCount();
     }
 }

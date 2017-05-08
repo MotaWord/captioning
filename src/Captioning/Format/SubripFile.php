@@ -42,7 +42,7 @@ class SubripFile extends File
 
     public function parse()
     {
-        $content = trim($this->fileContent);
+        $content = $this->fileContent;
 
         // Strip UTF-8 BOM
         $bom = pack('CCC', 0xef, 0xbb, 0xbf);
@@ -79,7 +79,7 @@ class SubripFile extends File
                     throw new \Exception($this->filename.' is not a proper .srt file. (Expected subtitle order index at line '.$lineNumber.')');
                 }
                 $subtitleIndex = intval($line);
-                if ($subtitleOrder !== $subtitleIndex) {
+                if ($strict && $subtitleOrder !== $subtitleIndex) {
                     throw new \Exception($this->filename.' is not a proper .srt file. (Invalid subtitle order index: '.$line.' at line '.$lineNumber.')');
                 }
                 $state = 'time';
@@ -118,7 +118,7 @@ class SubripFile extends File
 
             case 'text':
                 $subtitleText[] = $line;
-                if ($line === '' || $lineNumber === count($lines) - 1) {
+                if ($lineNumber === count($lines) - 1 || ($line === '' && $lines[$lineNumber+1] !== '')) {
                   $state = 'end';
                   // Fall through...
                 } else {
